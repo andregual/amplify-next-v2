@@ -1,37 +1,41 @@
 import { type ClientSchema, a, defineData } from '@aws-amplify/backend';
 
-/*== STEP 1 ===============================================================
-The section below creates a Todo database table with a "content" field. Try
-adding a new "isDone" field as a boolean. The authorization rule below
-specifies that any user authenticated via an API key can "create", "read",
-"update", and "delete" any "Todo" records.
-=========================================================================*/
-export const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-    })
-    .authorization((allow) => [allow.publicApiKey()]),
+const schema = a.schema({
   Trip: a
     .model({
-      price: a.float(),
-      capacity: a.integer(),
-      date: a.date(),
-      startTime: a.datetime(),
-      endTime: a.datetime(),
-      supplier: a.string(),
-      transitTime: a.string(),
-      reservationId: a.id(),
-      reservation: a.belongsTo('Reservation', 'reservationId'),
+      id: a.id().required(),
+      price: a.float().required(),
+      availableCapacity: a.integer().required(),
+      date: a.datetime().required(),
+      // Relationship field referencing the join model
+      reservationTrips: a.hasMany('ReservationTrip', 'tripId'),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+      allow.publicApiKey(),
+      // allow.publicApiKey().to(['read']),
+      // allow.authenticated().to(['create', 'update', 'delete', 'read']),
+    ]),
 
   Reservation: a
     .model({
-      trips: a.hasMany('Trip', 'reservationId'),
-      totalCapacity: a.integer(),
-      totalPrice: a.float(),
-      status: a.enum(['draft', 'confirmed']),
+      id: a.id().required(),
+      createdAt: a.datetime().required(),
+      status: a.enum(['PENDING', 'CONFIRMED', 'CANCELLED']),
+      // Relationship field referencing the join model
+      reservationTrips: a.hasMany('ReservationTrip', 'reservationId'),
+    })
+    .authorization((allow) => [allow.publicApiKey()]),
+
+  ReservationTrip: a
+    .model({
+      id: a.id().required(),
+      // Reference fields for the relationships
+      tripId: a.id().required(),
+      reservationId: a.id().required(),
+      reservedCapacity: a.integer().required(),
+      // Relationship fields using the reference fields
+      trip: a.belongsTo('Trip', 'tripId'),
+      reservation: a.belongsTo('Reservation', 'reservationId'),
     })
     .authorization((allow) => [allow.publicApiKey()]),
 });
@@ -50,32 +54,3 @@ export const data = defineData({
     },
   },
 });
-
-/*== STEP 2 ===============================================================
-Go to your frontend source code. From your client-side code, generate a
-Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
-WORK IN THE FRONTEND CODE FILE.)
-
-Using JavaScript or Next.js React Server Components, Middleware, Server 
-Actions or Pages Router? Review how to generate Data clients for those use
-cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
-=========================================================================*/
-
-/*
-"use client"
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>() // use this Data client for CRUDL requests
-*/
-
-/*== STEP 3 ===============================================================
-Fetch records from the database and use them in your frontend component.
-(THIS SNIPPET WILL ONLY WORK IN THE FRONTEND CODE FILE.)
-=========================================================================*/
-
-/* For example, in a React component, you can use this snippet in your
-  function's RETURN statement */
-// const { data: todos } = await client.models.Todo.list()
-
-// return <ul>{todos.map(todo => <li key={todo.id}>{todo.content}</li>)}</ul>
