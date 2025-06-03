@@ -44,6 +44,7 @@ export type Schema = ClientSchema<typeof schema>;
 
 export type Trip = Schema['Trip']['type'];
 export type Reservation = Schema['Reservation']['type'];
+export type ReservationTrip = Schema['ReservationTrip']['type'];
 
 export const data = defineData({
   schema,
